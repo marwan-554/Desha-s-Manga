@@ -16,11 +16,10 @@ const client = new Client({
         GatewayIntentBits.Guilds, 
         GatewayIntentBits.GuildMessages, 
         GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMembers // إضافة الميمبرز للعمليات المالية
+        GatewayIntentBits.GuildMembers
     ] 
 });
 
-// تصحيح اسم الحدث من clientReady إلى ready
 client.once('ready', async () => {
     console.log(`✅ تم تسجيل الدخول كـ ${client.user.tag}`);
     
@@ -30,11 +29,17 @@ client.once('ready', async () => {
         await rest.put(Routes.applicationCommands(CLIENT_ID), { 
             body: [
                 new SlashCommandBuilder().setName('manja').setDescription('عرض متجر المانجا الملكي 🥭'),
+
+                new SlashCommandBuilder()
+                    .setName('topbuyers') // 👈 أمر جديد
+                    .setDescription('عرض أكثر الناس شراءً للمانجا 🏆'),
+
                 new SlashCommandBuilder()
                     .setName('give')
                     .setDescription('توزيع مانجا للأعضاء (للإدارة فقط)')
                     .addUserOption(option => option.setName('user').setDescription('الشخص الذي ستعطيه المانجا').setRequired(true))
                     .addIntegerOption(option => option.setName('amount').setDescription('كمية المانجا').setRequired(true)),
+
                 new SlashCommandBuilder()
                     .setName('say')
                     .setDescription('اجعل البوت يقول رسالة (للإدارة فقط)')
@@ -63,6 +68,32 @@ client.on('interactionCreate', async interaction => {
                     .setDescription('اختر الكمية التي تريد شراءها:')
                     .setColor(0xFF8C00);
                 await interaction.reply({ embeds: [embed], components: [row] });
+            }
+
+            // 👇 أمر التوب
+            if (interaction.commandName === 'topbuyers') {
+                const all = await db.all();
+                const buyers = all
+                    .filter(data => data.id.startsWith('purchases_'))
+                    .sort((a, b) => b.value - a.value)
+                    .slice(0, 10);
+
+                if (buyers.length === 0) {
+                    return interaction.reply('❌ لا يوجد مشتريات حتى الآن!');
+                }
+
+                let desc = '';
+                for (let i = 0; i < buyers.length; i++) {
+                    const userId = buyers[i].id.split('_')[1];
+                    desc += `**${i + 1}.** <@${userId}> - 🥭 ${buyers[i].value} مشتريات\n`;
+                }
+
+                const embed = new EmbedBuilder()
+                    .setTitle('🏆 أكثر الناس شراءً للمانجا')
+                    .setDescription(desc)
+                    .setColor(0xFFD700);
+
+                await interaction.reply({ embeds: [embed] });
             }
 
             if (interaction.commandName === 'say') {
@@ -96,10 +127,14 @@ client.on('interactionCreate', async interaction => {
             }
             
             await db.sub(`balance_${interaction.user.id}`, price);
+
+            // 👇 تسجيل عدد المشتريات
+            await db.add(`purchases_${interaction.user.id}`, 1);
+
             await interaction.reply({ content: `✅ تم شراء ${items[interaction.customId]} بنجاح! 🥭`, flags: MessageFlags.Ephemeral });
         }
     } catch (error) {
-        if (error.code === 10062) return; // تجاهل أخطاء انتهاء وقت التفاعل
+        if (error.code === 10062) return;
         console.error('خطأ في التفاعل:', error);
     }
 });
@@ -107,13 +142,11 @@ client.on('interactionCreate', async interaction => {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // هدية عند ذكر "ديشا"
     if (message.content.toLowerCase().includes('ديشا')) {
         await db.add(`balance_${message.author.id}`, 5);
         message.react('🥭').catch(() => {});
     }
 
-    // الاستعلام عن الرصيد
     if (message.content === 'معايا كام جنيه اجيب مانجا') {
         const balance = await db.get(`balance_${message.author.id}`) || 0;
         message.reply(`رصيدك الحالي هو: **${balance}** جنيه مانجا 🥭`);
@@ -122,5 +155,4 @@ client.on('messageCreate', async message => {
 
 client.on('error', (error) => { console.error('خطأ في البوت:', error); });
 
-// تسجيل الدخول باستخدام المتغير الصحيح
 client.login(TOKEN);
