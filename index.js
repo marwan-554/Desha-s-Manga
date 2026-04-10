@@ -60,27 +60,46 @@ client.on('interactionCreate', async interaction => {
             const allowedUsers = ['1336058185034895490', '1125424066359210054'];
             if (interaction.commandName === 'wheel') {
                 const all = await db.all();
-                // فلترة الناس اللي عندهم سجل شراء في الداتا بيز
                 const buyerData = all.filter(data => data.id.startsWith('purchases_'));
 
                 if (buyerData.length < 2) {
                     return interaction.reply({ 
-                        content: '❌ لازم يكون فيه شخصين على الأقل اشتروا مانجا عشان العجلة تلف!', 
+                        content: '❌ لازم يكون فيه شخصين على الأقل اشتروا مانجا!', 
                         flags: MessageFlags.Ephemeral 
                     });
                 }
 
-                // اختيار اتنين عشوائيين من اللي اشتروا
+                // اختيار الأسماء
                 const shuffled = buyerData.sort(() => 0.5 - Math.random());
                 const firstId = shuffled[0].id.split('_')[1];
                 const secondId = shuffled[1].id.split('_')[1];
-
-                await interaction.reply('🎡 العجلة بتلف... مين هيعلم على مين؟');
                 
-                // النتيجة بعد 3 ثواني
-                setTimeout(async () => {
-                    await interaction.editReply(`<@${firstId}> fuck <@${secondId}>`);
-                }, 3000);
+                // جلب الأسماء لعرضها داخل العجلة
+                const p1 = await client.users.fetch(firstId);
+                const p2 = await client.users.fetch(secondId);
+
+                // مصفوفة لأشكال العجلة أثناء الدوران
+                const frames = [
+                    `🎡 **[ ${p1.username} ]** 🔃 **[ ${p2.username} ]**`,
+                    `🎡 **[ ${p2.username} ]** 🔃 **[ ${p1.username} ]**`,
+                    `🎡 **[ جاري الاختيار... ]**`,
+                    `🎡 **[ ${p1.username} ]** 🔃 **[ ${p2.username} ]**`
+                ];
+
+                await interaction.reply(frames[0]);
+
+                // محاكاة الدوران (تحديث الرسالة)
+                let i = 1;
+                const interval = setInterval(async () => {
+                    if (i < frames.length) {
+                        await interaction.editReply(frames[i]);
+                        i++;
+                    } else {
+                        clearInterval(interval);
+                        // النتيجة النهائية بعد الدوران
+                        await interaction.editReply(`✨ **النتيجة النهائية:**\n<@${firstId}> fuck <@${secondId}> 💥`);
+                    }
+                }, 800); // سرعة التحديث (800 مللي ثانية)
             }
 
             if (interaction.commandName === 'manja') {
