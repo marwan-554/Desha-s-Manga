@@ -29,8 +29,6 @@ client.once('ready', async () => {
         await rest.put(Routes.applicationCommands(CLIENT_ID), { 
             body: [
                 new SlashCommandBuilder().setName('manja').setDescription('عرض متجر المانجا الملكي 🥭'),
-                new SlashCommandBuilder().setName('wheel').setDescription('عجلة الحظ للمشترين فقط! 🎡'),
-
                 new SlashCommandBuilder()
                     .setName('top') // 👈 أمر جديد
                     .setDescription('عرض أكثر الناس شراءً للمانجا 🏆'),
@@ -58,52 +56,7 @@ client.on('interactionCreate', async interaction => {
     try {
         if (interaction.isChatInputCommand()) {
             const allowedUsers = ['1336058185034895490', '1125424066359210054'];
-            if (interaction.commandName === 'wheel') {
-                const all = await db.all();
-                const buyerData = all.filter(data => data.id.startsWith('purchases_'));
-
-                if (buyerData.length < 2) {
-                    return interaction.reply({ 
-                        content: '❌ لازم يكون فيه شخصين على الأقل اشتروا مانجا!', 
-                        flags: MessageFlags.Ephemeral 
-                    });
-                }
-
-                // اختيار الأسماء
-                const shuffled = buyerData.sort(() => 0.5 - Math.random());
-                const firstId = shuffled[0].id.split('_')[1];
-                const secondId = shuffled[1].id.split('_')[1];
-                
-                // جلب الأسماء لعرضها داخل العجلة
-                const p1 = await client.users.fetch(firstId);
-                const p2 = await client.users.fetch(secondId);
-
-                // مصفوفة لأشكال العجلة أثناء الدوران
-                const frames = [
-                    `🎡 **[ ${p1.username} ]** 🔃 **[ ${p2.username} ]**`,
-                    `🎡 **[ ${p2.username} ]** 🔃 **[ ${p1.username} ]**`,
-                    `🎡 **[ جاري الاختيار... ]**`,
-                    `🎡 **[ ${p1.username} ]** 🔃 **[ ${p2.username} ]**`
-                ];
-
-                await interaction.reply(frames[0]);
-
-                // محاكاة الدوران (تحديث الرسالة)
-               // ... (نفس الكود اللي فات لحد الـ interval)
-                let i = 1;
-                const interval = setInterval(async () => {
-                    if (i < frames.length) {
-                        await interaction.editReply(frames[i]);
-                        i++;
-                    } else {
-                        clearInterval(interval);
-                        // النتيجة النهائية بالتنسيق اللي طلبته:
-                        await interaction.editReply(`<@${firstId}>\nfuck\n<@${secondId}>`);
-                    }
-                }, 800);
-            }
-
-            if (interaction.commandName === 'manja') {
+           if (interaction.commandName === 'manja') {
                 const row = new ActionRowBuilder().addComponents(
                     new ButtonBuilder().setCustomId('buy_0.5').setLabel('نص كيلو (50 جنيه)').setStyle(ButtonStyle.Success),
                     new ButtonBuilder().setCustomId('buy_1').setLabel('كيلو (90 جنيه)').setStyle(ButtonStyle.Success),
