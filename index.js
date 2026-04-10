@@ -29,9 +29,10 @@ client.once('ready', async () => {
         await rest.put(Routes.applicationCommands(CLIENT_ID), { 
             body: [
                 new SlashCommandBuilder().setName('manja').setDescription('عرض متجر المانجا الملكي 🥭'),
+                new SlashCommandBuilder().setName('wheel').setDescription('عجلة الحظ للمشترين فقط! 🎡'),
 
                 new SlashCommandBuilder()
-                    .setName('topbuyers') // 👈 أمر جديد
+                    .setName('top') // 👈 أمر جديد
                     .setDescription('عرض أكثر الناس شراءً للمانجا 🏆'),
 
                 new SlashCommandBuilder()
@@ -44,6 +45,7 @@ client.once('ready', async () => {
                     .setName('say')
                     .setDescription('اجعل البوت يقول رسالة (للإدارة فقط)')
                     .addStringOption(option => option.setName('message').setDescription('الرسالة التي سيقولها البوت').setRequired(true))
+
             ] 
         });
         console.log('🚀 تم تسجيل الأوامر بنجاح!');
@@ -56,6 +58,30 @@ client.on('interactionCreate', async interaction => {
     try {
         if (interaction.isChatInputCommand()) {
             const allowedUsers = ['1336058185034895490', '1125424066359210054'];
+            if (interaction.commandName === 'wheel') {
+                const all = await db.all();
+                // فلترة الناس اللي عندهم سجل شراء في الداتا بيز
+                const buyerData = all.filter(data => data.id.startsWith('purchases_'));
+
+                if (buyerData.length < 2) {
+                    return interaction.reply({ 
+                        content: '❌ لازم يكون فيه شخصين على الأقل اشتروا مانجا عشان العجلة تلف!', 
+                        flags: MessageFlags.Ephemeral 
+                    });
+                }
+
+                // اختيار اتنين عشوائيين من اللي اشتروا
+                const shuffled = buyerData.sort(() => 0.5 - Math.random());
+                const firstId = shuffled[0].id.split('_')[1];
+                const secondId = shuffled[1].id.split('_')[1];
+
+                await interaction.reply('🎡 العجلة بتلف... مين هيعلم على مين؟');
+                
+                // النتيجة بعد 3 ثواني
+                setTimeout(async () => {
+                    await interaction.editReply(`<@${firstId}> fuck <@${secondId}>`);
+                }, 3000);
+            }
 
             if (interaction.commandName === 'manja') {
                 const row = new ActionRowBuilder().addComponents(
@@ -71,7 +97,7 @@ client.on('interactionCreate', async interaction => {
             }
 
             // 👇 أمر التوب
-            if (interaction.commandName === 'topbuyers') {
+            if (interaction.commandName === 'top') {
                 const all = await db.all();
                 const buyers = all
                     .filter(data => data.id.startsWith('purchases_'))
