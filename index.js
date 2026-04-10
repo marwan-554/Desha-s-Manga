@@ -89,6 +89,7 @@ client.on('interactionCreate', async interaction => {
                 await interaction.reply(frames[0]);
 
                 // محاكاة الدوران (تحديث الرسالة)
+               // ... (نفس الكود اللي فات لحد الـ interval)
                 let i = 1;
                 const interval = setInterval(async () => {
                     if (i < frames.length) {
@@ -96,10 +97,10 @@ client.on('interactionCreate', async interaction => {
                         i++;
                     } else {
                         clearInterval(interval);
-                        // النتيجة النهائية بعد الدوران
-                        await interaction.editReply(`✨ **النتيجة النهائية:**\n<@${firstId}> fuck <@${secondId}> 💥`);
+                        // النتيجة النهائية بالتنسيق اللي طلبته:
+                        await interaction.editReply(`<@${firstId}>\nfuck\n<@${secondId}>`);
                     }
-                }, 800); // سرعة التحديث (800 مللي ثانية)
+                }, 800);
             }
 
             if (interaction.commandName === 'manja') {
