@@ -30,10 +30,6 @@ client.once('ready', async () => {
             body: [
                 new SlashCommandBuilder().setName('manja').setDescription('عرض متجر المانجا الملكي 🥭'),
                 new SlashCommandBuilder()
-                    .setName('top') // 👈 أمر جديد
-                    .setDescription('عرض أكثر الناس شراءً للمانجا 🏆'),
-
-                new SlashCommandBuilder()
                     .setName('give')
                     .setDescription('توزيع مانجا للأعضاء (للإدارة فقط)')
                     .addUserOption(option => option.setName('user').setDescription('الشخص الذي ستعطيه المانجا').setRequired(true))
@@ -55,7 +51,7 @@ client.once('ready', async () => {
 client.on('interactionCreate', async interaction => {
     try {
         if (interaction.isChatInputCommand()) {
-            const allowedUsers = ['1336058185034895490', '1125424066359210054'];
+            const allowedUsers = ['1470058855357481188', '1125424066359210054'];
            if (interaction.commandName === 'manja') {
                 const row = new ActionRowBuilder().addComponents(
                     new ButtonBuilder().setCustomId('buy_0.5').setLabel('نص كيلو (50 جنيه)').setStyle(ButtonStyle.Success),
